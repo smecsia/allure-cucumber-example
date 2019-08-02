@@ -1,0 +1,58 @@
+containers:
+  test-env:
+    image: ruby:2.6
+    volumes:
+      - local: .
+        container: /code
+        options: cached
+      - local: /var/run/docker.sock
+        container: /var/run/docker.sock
+        options: delegated
+    working_directory: /code
+    run_as_current_user:
+      enabled: true
+      home_directory: /home/builder
+  curl:
+    image: byrnedo/alpine-curl
+    volumes:
+      - local: .
+        container: /code
+        options: cached
+    working_directory: /code
+    run_as_current_user:
+      enabled: true
+      home_directory: /home/builder
+  report-env:
+    image: adoptopenjdk:11-jre-hotspot
+    volumes:
+      - local: .
+        container: /code
+        options: cached
+    working_directory: /code
+    run_as_current_user:
+      enabled: true
+      home_directory: /home/builder
+tasks:
+  tests:
+    description: Run webdriver tests
+    run:
+      container: test-env
+      command: sh -c "gem install bundler && bundle install --verbose && rake test || true"
+  download-allure-cli:
+    description: Download Allure CLI
+    run:
+      container: curl
+      command: |-
+        sh -c 'if [ ! -d "build/allure-2.12.1" ]; then
+          curl http://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.12.1/allure-commandline-2.12.1.zip -o build/allure-commandline.zip
+          unzip build/allure-commandline.zip -d build
+        fi'
+  report:
+    description: Build Allure Report
+    run:
+      container: report-env
+      command: |-
+        sh -c 'build/allure-2.12.1/bin/allure generate -c -o build/allure-report build/allure-results'
+    prerequisites:
+      - tests
+      - download-allure-cli

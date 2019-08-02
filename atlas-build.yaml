@@ -1,0 +1,34 @@
+schemaVersion: "1.0"
+projectName: allure-cucumber-example
+version: 0.0.1
+default:
+  build:
+    volumes:
+      - ~/.gem:${container:home}/.gem
+    args:
+      allure-version: 2.12.1
+    env:
+      GEM_HOME: ${container:home}/.gem
+modules:
+  - name: example
+    build:
+      steps:
+        - step:
+            image: ruby:2.6
+            script:
+              - rm -fR allure-results
+              - gem install bundler
+              - bundle install --verbose
+              - rake || true
+        - step:
+            image:  byrnedo/alpine-curl
+            script:
+              - |-
+                if [ ! -d "allure-${arg:allure-version}" ]; then
+                  curl http://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/${arg:allure-version}/allure-commandline-${arg:allure-version}.zip -o build/allure-commandline.zip
+                  unzip build/allure-commandline.zip
+                fi
+        - step:
+            image:  adoptopenjdk:11-jre-hotspot
+            script:
+              - ./build/allure-2.12.1/bin/allure generate -c
