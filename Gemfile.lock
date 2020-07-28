@@ -35,7 +35,7 @@ GEM
       multi_json
     excon (0.65.0)
     gherkin (5.1.0)
-    json (2.2.0)
+    json (2.3.1)
     macaddr (1.7.2)
       systemu (~> 2.6.5)
     multi_json (1.13.1)
